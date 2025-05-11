@@ -1,0 +1,40 @@
+CREATE DATABASE IF NOT EXISTS pizzaria;
+USE pizzaria;
+
+CREATE TABLE IF NOT EXISTS cliente (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    sobrenome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20) NOT NULL UNIQUE
+    );
+
+CREATE TABLE IF NOT EXISTS sabor (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    tipo ENUM('SIMPLES', 'ESPECIAL', 'PREMIUM') NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS pizza (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    forma ENUM('CIRCULAR', 'QUADRADO', 'TRIANGULO') NOT NULL,
+    dimensao DECIMAL(10,2) NOT NULL,
+    sabor1_id INT NOT NULL,
+    sabor2_id INT,
+    FOREIGN KEY (sabor1_id) REFERENCES sabor(id) ON DELETE CASCADE,
+    FOREIGN KEY (sabor2_id) REFERENCES sabor(id) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS pedido (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    cliente_id INT NOT NULL,
+    estado ENUM('ABERTO', 'A_CAMINHO', 'ENTREGUE') NOT NULL DEFAULT 'ABERTO',
+    FOREIGN KEY (cliente_id) REFERENCES cliente(id) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS pedido_pizza (
+    pedido_id INT NOT NULL,
+    pizza_id INT NOT NULL,
+    PRIMARY KEY (pedido_id, pizza_id),
+    FOREIGN KEY (pedido_id) REFERENCES pedido(id) ON DELETE CASCADE,
+    FOREIGN KEY (pizza_id) REFERENCES pizza(id) ON DELETE CASCADE
+    );

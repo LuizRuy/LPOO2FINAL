@@ -7,6 +7,7 @@ import Model.dao.DaoType;
 import View.TelaClientes;
 import java.util.List;
 
+// Controller: ClienteController.java
 public class ClienteController {
     private final TelaClientes tela;
     private final ClienteDao clienteDao;
@@ -16,60 +17,75 @@ public class ClienteController {
         this.clienteDao = DaoFactory.getClienteDao(DaoType.SQL);
     }
 
-    public boolean cadastrarCliente(String nome, String sobrenome, String telefone) {
+    public void cadastrar() {
+        Cliente cliente = tela.getClienteForm();
+        if (cliente == null) return;
+
         try {
-            Cliente cliente = new Cliente(0, nome, sobrenome, telefone);
             clienteDao.inserir(cliente);
-            tela.atualizarTabela();
+            atualizarTabela();
             tela.limparCampos();
-            return true;
+            tela.mostrarMensagem("Cliente cadastrado com sucesso!");
         } catch (Exception e) {
             String msg = e.getMessage();
             if (msg != null && msg.contains("Duplicate entry") && msg.contains("cliente.telefone")) {
-                tela.mostrarErroClienteDuplicado(telefone);
+                tela.mostrarErroClienteDuplicado(cliente.getTelefone());
             } else {
                 tela.mostrarErro("Erro ao cadastrar cliente: " + e.getMessage());
             }
-            return false;
         }
     }
 
-    public void atualizarCliente(int id, String nome, String sobrenome, String telefone) {
+    public void atualizar() {
+        Cliente cliente = tela.getClienteFormComId();
+        if (cliente == null) return;
+
         try {
-            Cliente cliente = new Cliente(id, nome, sobrenome, telefone);
             clienteDao.atualizar(cliente);
-            tela.atualizarTabela();
+            atualizarTabela();
             tela.limparCampos();
+            tela.mostrarMensagem("Cliente atualizado com sucesso!");
         } catch (Exception e) {
             tela.mostrarErro("Erro ao atualizar cliente: " + e.getMessage());
         }
     }
 
-    public void excluirCliente(int id) {
+    public void excluir() {
         try {
-            clienteDao.excluir(id);
-            tela.atualizarTabela();
+            List<Cliente> listaParaExcluir = tela.getClientesSelecionados();
+            clienteDao.excluir(listaParaExcluir);
             tela.limparCampos();
+            atualizarTabela();
         } catch (Exception e) {
             tela.mostrarErro("Erro ao excluir cliente: " + e.getMessage());
         }
     }
 
-    public Cliente buscarClientePorTelefone(String telefone) {
+    public void buscar() {
+        String telefone = tela.getTelefoneBusca();
+        if (telefone.isEmpty()) {
+            atualizarTabela();
+            return;
+        }
+
         try {
-            return clienteDao.buscarPorTelefone(telefone);
+            Cliente cliente = clienteDao.buscarPorTelefone(telefone);
+            if (cliente != null) {
+                tela.mostrarCliente(cliente);
+            } else {
+                tela.mostrarErro("Cliente não encontrado!");
+            }
         } catch (Exception e) {
             tela.mostrarErro("Erro ao buscar cliente: " + e.getMessage());
-            return null;
         }
     }
 
-    public List<Cliente> listarTodosClientes() {
+    public void atualizarTabela() {
         try {
-            return clienteDao.listarTodos();
+            List<Cliente> clientes = clienteDao.listarTodos();
+            tela.mostrarClientes(clientes);
         } catch (Exception e) {
             tela.mostrarErro("Erro ao listar clientes: " + e.getMessage());
-            return null;
         }
     }
-} 
+}

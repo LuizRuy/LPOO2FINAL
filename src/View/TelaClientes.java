@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -25,7 +26,7 @@ public class TelaClientes extends JFrame {
     private JButton btnAtualizar;
     private JButton btnExcluir;
     private JButton btnBuscar;
-    private JTable tabelaClientes;
+    public JTable tabelaClientes;
     private DefaultTableModel modeloTabela;
     private ClienteController controller;
 
@@ -77,183 +78,119 @@ public class TelaClientes extends JFrame {
 
         configurarListeners();
 
-        carregarClientes();
+        controller.atualizarTabela();
+        tabelaClientes.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
-    private void configurarListeners() {
-        btnCadastrar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cadastrarCliente();
-            }
-        });
-
-        btnAtualizar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                atualizarCliente();
-            }
-        });
-
-        btnExcluir.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                excluirCliente();
-            }
-        });
-
-        btnBuscar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                buscarCliente();
-            }
-        });
-
-        tabelaClientes.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tabelaClientes.getSelectedRow() != -1) {
-                int linhaSelecionada = tabelaClientes.getSelectedRow();
-                txtNome.setText(tabelaClientes.getValueAt(linhaSelecionada, 1).toString());
-                txtSobrenome.setText(tabelaClientes.getValueAt(linhaSelecionada, 2).toString());
-                txtTelefone.setText(tabelaClientes.getValueAt(linhaSelecionada, 3).toString());
-            }
-        });
+    public JTable getTabelaClientes() {
+        return tabelaClientes;
     }
 
-    private void carregarClientes() {
-        try {
-            modeloTabela.setRowCount(0);
-            List<Cliente> clientes = controller.listarTodosClientes();
-            if (clientes != null) {
-                for (Cliente cliente : clientes) {
-                    modeloTabela.addRow(new Object[]{
-                        cliente.getId(),
-                        cliente.getNome(),
-                        cliente.getSobrenome(),
-                        cliente.getTelefone()
-                    });
-                }
-            }
-        } catch (Exception e) {
-            mostrarErro("Erro ao carregar clientes: " + e.getMessage());
+    public Cliente getClienteForm() {
+        String nome = txtNome.getText().trim();
+        String sobrenome = txtSobrenome.getText().trim();
+        String telefone = txtTelefone.getText().trim();
+
+        if (nome.isEmpty() || sobrenome.isEmpty() || telefone.isEmpty()) {
+            mostrarErro("Todos os campos são obrigatórios!");
+            return null;
         }
+
+        return new Cliente(0, nome, sobrenome, telefone);
     }
 
-    private void cadastrarCliente() {
-        try {
-            String nome = txtNome.getText().trim();
-            String sobrenome = txtSobrenome.getText().trim();
-            String telefone = txtTelefone.getText().trim();
-
-            if (nome.isEmpty() || sobrenome.isEmpty() || telefone.isEmpty()) {
-                mostrarErro("Todos os campos são obrigatórios!");
-                return;
-            }
-
-            boolean sucesso = controller.cadastrarCliente(nome, sobrenome, telefone);
-            if (sucesso) {
-                carregarClientes();
-                limparCampos();
-                mostrarMensagem("Cliente cadastrado com sucesso!");
-            }
-        } catch (Exception e) {
-            mostrarErro("Erro ao cadastrar cliente: " + e.getMessage());
+    public Cliente getClienteFormComId() {
+        int linhaSelecionada = tabelaClientes.getSelectedRow();
+        if (linhaSelecionada == -1) {
+            mostrarErro("Selecione um cliente!");
+            return null;
         }
-    }
 
-    private void atualizarCliente() {
-        try {
-            int linhaSelecionada = tabelaClientes.getSelectedRow();
-            if (linhaSelecionada == -1) {
-                mostrarErro("Selecione um cliente para atualizar!");
-                return;
-            }
-
-            int id = (int) tabelaClientes.getValueAt(linhaSelecionada, 0);
-            String nome = txtNome.getText().trim();
-            String sobrenome = txtSobrenome.getText().trim();
-            String telefone = txtTelefone.getText().trim();
-
-            if (nome.isEmpty() || sobrenome.isEmpty() || telefone.isEmpty()) {
-                mostrarErro("Todos os campos são obrigatórios!");
-                return;
-            }
-
-            controller.atualizarCliente(id, nome, sobrenome, telefone);
-            carregarClientes();
-            limparCampos();
-            mostrarMensagem("Cliente atualizado com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao atualizar cliente: " + e.getMessage());
+        int id = (int) tabelaClientes.getValueAt(linhaSelecionada, 0);
+        Cliente cliente = getClienteForm();
+        if (cliente != null) {
+            cliente.setId(id);
         }
+        return cliente;
     }
 
-    private void excluirCliente() {
-        try {
-            int linhaSelecionada = tabelaClientes.getSelectedRow();
-            if (linhaSelecionada == -1) {
-                mostrarErro("Selecione um cliente para excluir!");
-                return;
-            }
-
-            int id = (int) tabelaClientes.getValueAt(linhaSelecionada, 0);
-            controller.excluirCliente(id);
-            carregarClientes();
-            limparCampos();
-            mostrarMensagem("Cliente excluído com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao excluir cliente: " + e.getMessage());
+    public List<Cliente> getClientesSelecionados() {
+        int[] linhas = this.getTabelaClientes().getSelectedRows();
+        if (linhas.length == 0) {
+            mostrarErro("Selecione ao menos um cliente para excluir!");
+            return null;
         }
+
+        List<Cliente> selecionados = new ArrayList();
+        for (int linha : linhas) {
+            int id = (int) tabelaClientes.getValueAt(linha, 0);
+            String nome = (String) tabelaClientes.getValueAt(linha, 1);
+            String sobrenome = (String) tabelaClientes.getValueAt(linha, 2);
+            String telefone = (String) tabelaClientes.getValueAt(linha, 3);
+            selecionados.add(new Cliente(id, nome, sobrenome, telefone));
+        }
+        return selecionados;
     }
 
-    private void buscarCliente() {
-        try {
-            String telefone = txtTelefone.getText().trim();
-            if (telefone.isEmpty()) {
-                carregarClientes();
-                return;
-            }
 
-            Cliente cliente = controller.buscarClientePorTelefone(telefone);
-            if (cliente != null) {
-                modeloTabela.setRowCount(0);
-                modeloTabela.addRow(new Object[]{
+    public String getTelefoneBusca() {
+        return txtTelefone.getText().trim();
+    }
+
+    public void mostrarClientes(List<Cliente> clientes) {
+        modeloTabela.setRowCount(0);
+        for (Cliente cliente : clientes) {
+            modeloTabela.addRow(new Object[]{
                     cliente.getId(),
                     cliente.getNome(),
                     cliente.getSobrenome(),
                     cliente.getTelefone()
-                });
-            } else {
-                mostrarErro("Cliente não encontrado!");
-            }
-        } catch (Exception e) {
-            mostrarErro("Erro ao buscar cliente: " + e.getMessage());
+            });
         }
     }
 
-    public void atualizarTabela() {
-        carregarClientes();
+    public void mostrarCliente(Cliente cliente) {
+        modeloTabela.setRowCount(0);
+        modeloTabela.addRow(new Object[]{
+                cliente.getId(),
+                cliente.getNome(),
+                cliente.getSobrenome(),
+                cliente.getTelefone()
+        });
     }
 
     public void limparCampos() {
         txtNome.setText("");
         txtSobrenome.setText("");
         txtTelefone.setText("");
+        tabelaClientes.clearSelection();
     }
 
-    public void mostrarErro(String mensagem) {
-        JOptionPane.showMessageDialog(this, mensagem, "Erro", JOptionPane.ERROR_MESSAGE);
+    public void mostrarMensagem(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Mensagem", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    public void mostrarMensagem(String mensagem) {
-        JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+    public void mostrarErro(String erro) {
+        JOptionPane.showMessageDialog(this, erro, "Erro", JOptionPane.ERROR_MESSAGE);
     }
 
     public void mostrarErroClienteDuplicado(String telefone) {
-        JOptionPane.showMessageDialog(
-            this,
-            "<html><b>Já existe um cliente cadastrado com o telefone:</b><br><br><font color='blue'>" + telefone + "</font><br><br>Por favor, utilize outro número ou edite o cliente existente.</html>",
-            "Cliente já cadastrado",
-            JOptionPane.WARNING_MESSAGE
-        );
+        mostrarErro("Telefone " + telefone + " já cadastrado!");
+    }
+
+    private void configurarListeners() {
+        btnCadastrar.addActionListener(e -> controller.cadastrar());
+        btnAtualizar.addActionListener(e -> controller.atualizar());
+        btnExcluir.addActionListener(e -> controller.excluir());
+        btnBuscar.addActionListener(e -> controller.buscar());
+
+        tabelaClientes.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && tabelaClientes.getSelectedRow() != -1) {
+                int linha = tabelaClientes.getSelectedRow();
+                txtNome.setText((String) tabelaClientes.getValueAt(linha, 1));
+                txtSobrenome.setText((String) tabelaClientes.getValueAt(linha, 2));
+                txtTelefone.setText((String) tabelaClientes.getValueAt(linha, 3));
+            }
+        });
     }
 } 

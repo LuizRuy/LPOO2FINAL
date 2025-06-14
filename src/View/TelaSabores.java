@@ -7,6 +7,8 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
@@ -42,6 +44,15 @@ public class TelaSabores extends JFrame {
         painelEntrada.add(new JLabel("Nome:"));
         txtNome = new JTextField();
         painelEntrada.add(txtNome);
+        txtNome.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isLetter(c) && !Character.isWhitespace(c)) {
+                    e.consume();
+                }
+            }
+        });
         painelEntrada.add(new JLabel("Tipo:"));
         cmbTipo = new JComboBox<>(TipoPizza.values());
         painelEntrada.add(cmbTipo);

@@ -1,6 +1,7 @@
 package View;
 
 import Model.PrecoPizza;
+import Controller.PrecoController;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -18,6 +19,7 @@ public class TelaPrecos extends JFrame {
     private JTextField txtPrecoPremium;
     private JButton btnSalvar;
     private PrecoPizza precoPizza;
+    private PrecoController controller;
 
     public TelaPrecos() {
         setTitle("Atualização de Preços");
@@ -54,14 +56,15 @@ public class TelaPrecos extends JFrame {
 
         add(painelPrincipal);
 
-        configurarListener();
+        controller = new PrecoController(this);
+        configurarListeners();
     }
 
-    private void configurarListener() {
+    private void configurarListeners() {
         btnSalvar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                salvarPrecos();
+                controller.atualizarPrecos();
             }
         });
     }
@@ -95,5 +98,21 @@ public class TelaPrecos extends JFrame {
 
     public void mostrarMensagem(String mensagem) {
         JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void setPrecos(double simples, double especial, double premium) {
+        txtPrecoSimples.setText(String.valueOf(simples));
+        txtPrecoEspecial.setText(String.valueOf(especial));
+        txtPrecoPremium.setText(String.valueOf(premium));
+    }
+
+    public double getPrecoSimples() {
+        return Double.parseDouble(txtPrecoSimples.getText().trim());
+    }
+    public double getPrecoEspecial() {
+        return Double.parseDouble(txtPrecoEspecial.getText().trim());
+    }
+    public double getPrecoPremium() {
+        return Double.parseDouble(txtPrecoPremium.getText().trim());
     }
 } 

@@ -12,6 +12,10 @@ import Model.dao.DaoFactory;
 import Model.dao.DaoType;
 import View.TelaPedidos;
 import enums.EstadoPedido;
+import enums.FormaPizza;
+import Model.Circulo;
+import Model.Quadrado;
+import Model.Triangulo;
 import java.util.List;
 
 public class PedidoController {
@@ -20,6 +24,8 @@ public class PedidoController {
     private final PizzaDao pizzaDao;
     private final SaborDao saborDao;
     private final TelaPedidos view;
+    private Cliente clienteSelecionado;
+    private Pedido pedidoAtual;
 
     public PedidoController(TelaPedidos view) {
         this.view = view;
@@ -29,12 +35,24 @@ public class PedidoController {
         this.saborDao = DaoFactory.getSaborDao(DaoType.SQL);
     }
 
-    public Cliente buscarClientePorTelefone(String telefone) {
+    public void buscarClientePorTelefone() {
         try {
-            return clienteDao.buscarPorTelefone(telefone);
+            String telefone = view.getTelefoneCliente();
+            if (telefone.isEmpty()) {
+                view.mostrarErro("Digite o telefone do cliente!");
+                return;
+            }
+
+            clienteSelecionado = clienteDao.buscarPorTelefone(telefone);
+            if (clienteSelecionado != null) {
+                view.atualizarLabelCliente(clienteSelecionado.getNome() + " " + clienteSelecionado.getSobrenome());
+                carregarPedidosExistentes();
+            } else {
+                view.mostrarErro("Cliente não encontrado!");
+                view.atualizarLabelCliente("Cliente não selecionado");
+            }
         } catch (Exception e) {
             view.mostrarErro("Erro ao buscar cliente: " + e.getMessage());
-            return null;
         }
     }
 
@@ -56,72 +74,180 @@ public class PedidoController {
         }
     }
 
-    public Pedido buscarPedidoPorId(int id) {
+    public void buscarPedidoPorId() {
         try {
-            return pedidoDao.buscarPorId(id);
+            int idPedido = view.getIdPedidoSelecionado();
+            if (idPedido < 0) {
+                view.mostrarErro("Selecione um pedido!");
+                return;
+            }
+
+            pedidoAtual = pedidoDao.buscarPorId(idPedido);
+            if (pedidoAtual == null) {
+                view.mostrarErro("Pedido não encontrado!");
+                return;
+            }
+
+            if (pedidoAtual.getEstado() != EstadoPedido.ABERTO) {
+                view.mostrarErro("Apenas pedidos em estado ABERTO podem ser alterados!");
+                return;
+            }
+
+            clienteSelecionado = pedidoAtual.getCliente();
+            view.atualizarLabelCliente(clienteSelecionado.getNome() + " " + clienteSelecionado.getSobrenome());
+            view.atualizarTabelaPizzas(pedidoAtual.getPizzas());
+            view.atualizarPrecoTotal(calcularPrecoTotal(pedidoAtual));
+            view.mostrarMensagem("Pedido carregado com sucesso!");
         } catch (Exception e) {
             view.mostrarErro("Erro ao buscar pedido: " + e.getMessage());
-            return null;
         }
     }
 
-    public void adicionarPizzaAoPedido(Pedido pedido, Pizza pizza) {
+    public void adicionarPizzaAoPedido() {
         try {
-            pizzaDao.inserir(pizza);
+            if (clienteSelecionado == null) {
+                view.mostrarErro("Selecione um cliente primeiro!");
+                return;
+            }
+
+            FormaPizza forma = view.getFormaPizza();
+            boolean isPorArea = view.isPorArea();
+            double dimensao = view.getDimensao();
+            Sabor sabor1 = view.getSabor1();
+            Sabor sabor2 = view.getSabor2();
+
+            if (sabor1 == null) {
+                view.mostrarErro("Selecione pelo menos um sabor!");
+                return;
+            }
+
+            if (pedidoAtual == null) {
+                pedidoAtual = new Pedido(0, clienteSelecionado);
+                pedidoAtual.setEstado(EstadoPedido.ABERTO);
+            }
+
+            Pizza pizza = criarPizza(forma, isPorArea, dimensao, sabor1, sabor2);
+            pedidoAtual.adicionarPizza(pizza);
+            view.atualizarTabelaPizzas(pedidoAtual.getPizzas());
+            view.atualizarPrecoTotal(calcularPrecoTotal(pedidoAtual));
         } catch (Exception e) {
             view.mostrarErro("Erro ao adicionar pizza: " + e.getMessage());
         }
     }
 
-    public void removerPizzaDoPedido(Pedido pedido, Pizza pizza) {
+    public void removerPizzaDoPedido() {
         try {
-            pizzaDao.excluir(pizza.getId());
+            int linhaSelecionada = view.getLinhaPizzaSelecionada();
+            if (linhaSelecionada < 0) {
+                view.mostrarErro("Selecione uma pizza para remover!");
+                return;
+            }
+
+            if (pedidoAtual == null || pedidoAtual.getPizzas().isEmpty()) {
+                view.mostrarErro("Não há pizzas para remover!");
+                return;
+            }
+
+            if (linhaSelecionada >= 0 && linhaSelecionada < pedidoAtual.getPizzas().size()) {
+                Pizza pizza = pedidoAtual.getPizzas().get(linhaSelecionada);
+                pedidoAtual.removerPizza(pizza);
+                view.atualizarTabelaPizzas(pedidoAtual.getPizzas());
+                view.atualizarPrecoTotal(calcularPrecoTotal(pedidoAtual));
+            }
         } catch (Exception e) {
             view.mostrarErro("Erro ao remover pizza: " + e.getMessage());
         }
     }
 
-    public void finalizarPedido(Pedido pedido) {
+    public void finalizarPedido() {
         try {
-            // Para novo pedido, insere todas as pizzas
-            if (pedido.getId() == 0) {
-                for (Pizza pizza : pedido.getPizzas()) {
-                    if (pizza.getId() == 0) {
-                        pizzaDao.inserir(pizza);
-                    }
-                }
+            if (pedidoAtual == null || pedidoAtual.getPizzas().isEmpty()) {
+                view.mostrarErro("Adicione pelo menos uma pizza ao pedido!");
+                return;
             }
-
-            // Salvar ou atualizar no banco
-            if (pedido.getId() == 0) {
-                pedidoDao.inserir(pedido);
+            if (pedidoAtual.getId() == 0) {
+                pedidoDao.inserir(pedidoAtual);
             } else {
-                pedidoDao.atualizar(pedido);
+                pedidoDao.atualizar(pedidoAtual);
             }
 
-            view.mostrarMensagem("Pedido " + 
-                (pedido.getId() == 0 ? "finalizado" : "atualizado") + " com sucesso!");
+            view.mostrarMensagem("Pedido " +
+                (pedidoAtual.getId() == 0 ? "finalizado" : "atualizado") + " com sucesso!");
+            limparPedido();
         } catch (Exception e) {
             view.mostrarErro("Erro ao finalizar pedido: " + e.getMessage());
         }
     }
 
-    public void atualizarEstadoPedido(Pedido pedido, EstadoPedido novoEstado) {
+    public void atualizarEstadoPedido(EstadoPedido novoEstado) {
         try {
-            pedido.setEstado(novoEstado);
-            pedidoDao.atualizar(pedido);
-            view.atualizarTabelaPizzas();
+            if (pedidoAtual == null) {
+                view.mostrarErro("Nenhum pedido selecionado!");
+                return;
+            }
+
+            pedidoAtual.setEstado(novoEstado);
+            pedidoDao.atualizar(pedidoAtual);
+            view.atualizarTabelaPizzas(pedidoAtual.getPizzas());
         } catch (Exception e) {
             view.mostrarErro("Erro ao atualizar estado do pedido: " + e.getMessage());
         }
     }
 
-    public List<Pedido> listarPedidosPorCliente(Cliente cliente) {
+    public List<Pedido> listarPedidosPorCliente() {
         try {
-            return pedidoDao.buscarPorCliente(cliente);
+            if (clienteSelecionado == null) {
+                view.mostrarErro("Nenhum cliente selecionado!");
+                return null;
+            }
+            return pedidoDao.buscarPorCliente(clienteSelecionado);
         } catch (Exception e) {
             view.mostrarErro("Erro ao listar pedidos do cliente: " + e.getMessage());
             return null;
+        }
+    }
+
+    private Pizza criarPizza(FormaPizza forma, boolean isPorArea, double dimensao, Sabor sabor1, Sabor sabor2) {
+        // Cria o objeto Forma correto
+        Model.Forma formaObj = null;
+        switch (forma) {
+            case CIRCULAR:
+                formaObj = new Circulo(isPorArea ? Math.sqrt(dimensao / Math.PI) : dimensao);
+                break;
+            case QUADRADO:
+                formaObj = new Quadrado(isPorArea ? Math.sqrt(dimensao) : dimensao);
+                break;
+            case TRIANGULO:
+                formaObj = new Triangulo(isPorArea ? Math.sqrt(4 * dimensao / Math.sqrt(3)) : dimensao);
+                break;
+        }
+        if (sabor2 != null) {
+            return new Pizza(0, formaObj, sabor1, sabor2);
+        } else {
+            return new Pizza(0, formaObj, sabor1);
+        }
+    }
+
+    private double calcularPrecoTotal(Pedido pedido) {
+        return pedido.getPizzas().stream()
+            .mapToDouble(Pizza::getPrecoTotal)
+            .sum();
+    }
+
+    public void limparPedido() {
+        pedidoAtual = null;
+        clienteSelecionado = null;
+        view.limparPedido();
+    }
+
+    public void carregarPedidosExistentes() {
+        try {
+            if (clienteSelecionado != null) {
+                List<Pedido> pedidos = pedidoDao.buscarPorCliente(clienteSelecionado);
+                view.atualizarComboPedidos(pedidos);
+            }
+        } catch (Exception e) {
+            view.mostrarErro("Erro ao carregar pedidos: " + e.getMessage());
         }
     }
 } 

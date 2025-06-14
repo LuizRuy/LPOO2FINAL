@@ -6,6 +6,8 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
@@ -51,6 +53,36 @@ public class TelaClientes extends JFrame {
         painelEntrada.add(new JLabel(""));
         btnBuscar = new JButton("Buscar");
         painelEntrada.add(btnBuscar);
+
+        // Adiciona validação para nome e sobrenome (apenas letras e espaço)
+        txtNome.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isLetter(c) && !Character.isWhitespace(c)) {
+                    e.consume();
+                }
+            }
+        });
+        txtSobrenome.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isLetter(c) && !Character.isWhitespace(c)) {
+                    e.consume();
+                }
+            }
+        });
+        // Adiciona validação para telefone (apenas números)
+        txtTelefone.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isDigit(c)) {
+                    e.consume();
+                }
+            }
+        });
 
         JPanel painelBotoes = new JPanel(new GridLayout(1, 3, 10, 10));
         btnCadastrar = new JButton("Cadastrar");

@@ -39,4 +39,13 @@ public class DaoFactory {
                 throw new RuntimeException("Tipo não existe:"+type);
         }
     }
+
+    public static PrecoPizzaDao getPrecoPizzaDao(DaoType type) {
+        switch(type){
+            case SQL :
+                return PrecoPizzaDaoSql.getPrecoPizzaDaoSql();
+            default:
+                throw new RuntimeException("Tipo não existe:"+type);
+        }
+    }
 }

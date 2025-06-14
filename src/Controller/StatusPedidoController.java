@@ -17,36 +17,42 @@ public class StatusPedidoController {
         this.pedidoDao = DaoFactory.getPedidoDao(DaoType.SQL);
     }
 
-    public List<Pedido> listarTodosPedidos() {
+    public void listarTodosPedidos() {
         try {
-            return pedidoDao.listarTodos();
+            List<Pedido> pedidos = pedidoDao.listarTodos();
+            tela.carregarPedidos(pedidos);
         } catch (Exception e) {
             tela.mostrarErro("Erro ao listar pedidos: " + e.getMessage());
-            return null;
         }
     }
 
-    public void atualizarEstadoPedido(Pedido pedido, EstadoPedido novoEstado) {
+    public void atualizarStatus() {
+        Pedido pedido = tela.atualizarStatus();
+        if (pedido == null) return;
+
         try {
             Pedido pedidoCompleto = pedidoDao.buscarPorId(pedido.getId());
-            if (pedidoCompleto != null) {
-                pedidoCompleto.setEstado(novoEstado);
-                pedidoDao.atualizar(pedidoCompleto);
-                tela.atualizarTabela();
-            } else {
+            if (pedidoCompleto == null) {
                 tela.mostrarErro("Pedido não encontrado!");
+                return;
             }
+
+            pedidoCompleto.setEstado(pedido.getEstado());
+            pedidoDao.atualizar(pedidoCompleto);
+
+            listarTodosPedidos();
+            tela.mostrarMensagem("Status atualizado com sucesso!");
         } catch (Exception e) {
-            tela.mostrarErro("Erro ao atualizar estado do pedido: " + e.getMessage());
+            tela.mostrarErro("Erro ao atualizar status: " + e.getMessage());
         }
     }
 
-    public Pedido buscarPedidoPorId(int id) {
+    public void buscarPedidoPorId() {
         try {
-            return pedidoDao.buscarPorId(id);
+            Pedido pedido = tela.atualizarStatus();
+            Pedido pedidoCompleto = pedidoDao.buscarPorId(pedido.getId());
         } catch (Exception e) {
             tela.mostrarErro("Erro ao buscar pedido: " + e.getMessage());
-            return null;
         }
     }
 } 

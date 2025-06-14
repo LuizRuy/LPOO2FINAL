@@ -7,6 +7,9 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -41,6 +44,15 @@ public class TelaSabores extends JFrame {
         painelEntrada.add(new JLabel("Nome:"));
         txtNome = new JTextField();
         painelEntrada.add(txtNome);
+        txtNome.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isLetter(c) && !Character.isWhitespace(c)) {
+                    e.consume();
+                }
+            }
+        });
         painelEntrada.add(new JLabel("Tipo:"));
         cmbTipo = new JComboBox<>(TipoPizza.values());
         painelEntrada.add(cmbTipo);
@@ -71,28 +83,28 @@ public class TelaSabores extends JFrame {
 
         configurarListeners();
 
-        carregarSabores();
+        controller.listarTodosSabores();
     }
 
     private void configurarListeners() {
         btnCadastrar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cadastrarSabor();
+                controller.cadastrarSabor();
             }
         });
 
         btnAtualizar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                atualizarSabor();
+                controller.atualizarSabor();
             }
         });
 
         btnExcluir.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                excluirSabor();
+                controller.excluirSaboresSelecionados();
             }
         });
 
@@ -105,10 +117,8 @@ public class TelaSabores extends JFrame {
         });
     }
 
-    private void carregarSabores() {
-        try {
+    public void carregarSabores(List<Sabor> sabores) {
             modeloTabela.setRowCount(0);
-            List<Sabor> sabores = controller.listarTodosSabores();
             if (sabores != null) {
                 for (Sabor sabor : sabores) {
                     modeloTabela.addRow(new Object[]{
@@ -118,77 +128,57 @@ public class TelaSabores extends JFrame {
                     });
                 }
             }
-        } catch (Exception e) {
-            mostrarErro("Erro ao carregar sabores: " + e.getMessage());
-        }
     }
 
-    private void cadastrarSabor() {
-        try {
+    public Sabor getSaborForm() {
+
             String nome = txtNome.getText().trim();
             TipoPizza tipo = (TipoPizza) cmbTipo.getSelectedItem();
 
             if (nome.isEmpty()) {
                 mostrarErro("O nome é obrigatório!");
-                return;
+                return null;
             }
 
-            controller.cadastrarSabor(nome, tipo);
-            carregarSabores();
-            limparCampos();
-            mostrarMensagem("Sabor cadastrado com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao cadastrar sabor: " + e.getMessage());
+            return new Sabor(nome, tipo);
+    }
+
+    public JTable getTabelaSabores() {
+        return tabelaSabores;
+    }
+
+    public Sabor getSaborFormComId() {
+        int linhaSelecionada = tabelaSabores.getSelectedRow();
+        if (linhaSelecionada == -1) {
+            mostrarErro("Selecione um sabor!");
+            return null;
         }
-    }
 
-    private void atualizarSabor() {
-        try {
-            int linhaSelecionada = tabelaSabores.getSelectedRow();
-            if (linhaSelecionada == -1) {
-                mostrarErro("Selecione um sabor para atualizar!");
-                return;
-            }
-
-            int id = (int) tabelaSabores.getValueAt(linhaSelecionada, 0);
-            String nome = txtNome.getText().trim();
-            TipoPizza tipo = (TipoPizza) cmbTipo.getSelectedItem();
-
-            if (nome.isEmpty()) {
-                mostrarErro("O nome é obrigatório!");
-                return;
-            }
-
-            controller.atualizarSabor(id, nome, tipo);
-            carregarSabores();
-            limparCampos();
-            mostrarMensagem("Sabor atualizado com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao atualizar sabor: " + e.getMessage());
+        int id = (int) tabelaSabores.getValueAt(linhaSelecionada, 0);
+        Sabor sabor = getSaborForm();
+        if (sabor != null) {
+            sabor.setId(id);
         }
+        return sabor;
     }
 
-    private void excluirSabor() {
-        try {
-            int linhaSelecionada = tabelaSabores.getSelectedRow();
-            if (linhaSelecionada == -1) {
-                mostrarErro("Selecione um sabor para excluir!");
-                return;
-            }
-
-            int id = (int) tabelaSabores.getValueAt(linhaSelecionada, 0);
-            controller.excluirSabor(id);
-            carregarSabores();
-            limparCampos();
-            mostrarMensagem("Sabor excluído com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao excluir sabor: " + e.getMessage());
+    public List<Sabor> getSaboresSelecionados() {
+        int[] linhas = this.getTabelaSabores().getSelectedRows();
+        if (linhas.length == 0) {
+            mostrarErro("Selecione ao menos um sabor para excluir!");
+            return null;
         }
+
+        List<Sabor> selecionados = new ArrayList<>();
+        for (int linha : linhas) {
+            int id = (int) tabelaSabores.getValueAt(linha, 0);
+            String nome = (String) tabelaSabores.getValueAt(linha, 1);
+            TipoPizza tipo = TipoPizza.valueOf(tabelaSabores.getValueAt(linha, 2).toString());
+            selecionados.add(new Sabor(id, nome, tipo));
+        }
+        return selecionados;
     }
 
-    public void atualizarTabela() {
-        carregarSabores();
-    }
 
     public void limparCampos() {
         txtNome.setText("");

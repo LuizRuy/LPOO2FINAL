@@ -17,44 +17,57 @@ public class SaborController {
         this.saborDao = DaoFactory.getSaborDao(DaoType.SQL);
     }
 
-    public void cadastrarSabor(String nome, TipoPizza tipo) {
+    public void cadastrarSabor() {
         try {
-            Sabor sabor = new Sabor(0, nome, tipo);
+            Sabor sabor = tela.getSaborForm();
+            if (sabor == null) return;
+
             saborDao.inserir(sabor);
-            tela.atualizarTabela();
+            listarTodosSabores();
             tela.limparCampos();
+            tela.mostrarMensagem("Sabor cadastrado com sucesso!");
         } catch (Exception e) {
             tela.mostrarErro("Erro ao cadastrar sabor: " + e.getMessage());
         }
     }
 
-    public void atualizarSabor(int id, String nome, TipoPizza tipo) {
+    public void atualizarSabor() {
         try {
-            Sabor sabor = new Sabor(id, nome, tipo);
+            Sabor sabor = tela.getSaborFormComId();
+            if (sabor == null) return;
+
             saborDao.atualizar(sabor);
-            tela.atualizarTabela();
+            listarTodosSabores();
             tela.limparCampos();
+            tela.mostrarMensagem("Sabor atualizado com sucesso!");
         } catch (Exception e) {
             tela.mostrarErro("Erro ao atualizar sabor: " + e.getMessage());
         }
     }
 
-    public void excluirSabor(int id) {
+    public void excluirSaboresSelecionados() {
         try {
-            saborDao.excluir(id);
-            tela.atualizarTabela();
+            List<Sabor> selecionados = tela.getSaboresSelecionados();
+            if (selecionados == null) return;
+
+            for (Sabor sabor : selecionados) {
+                saborDao.excluir(sabor.getId());
+            }
+
+            listarTodosSabores();
             tela.limparCampos();
+            tela.mostrarMensagem("Sabor(es) excluído(s) com sucesso!");
         } catch (Exception e) {
-            tela.mostrarErro("Erro ao excluir sabor: " + e.getMessage());
+            tela.mostrarErro("Erro ao excluir sabores: " + e.getMessage());
         }
     }
 
-    public List<Sabor> listarTodosSabores() {
+    public void listarTodosSabores() {
         try {
-            return saborDao.listarTodos();
+            List<Sabor> sabores = saborDao.listarTodos();
+            tela.carregarSabores(sabores);
         } catch (Exception e) {
             tela.mostrarErro("Erro ao listar sabores: " + e.getMessage());
-            return null;
         }
     }
 
@@ -66,4 +79,5 @@ public class SaborController {
             return null;
         }
     }
-} 
+
+}

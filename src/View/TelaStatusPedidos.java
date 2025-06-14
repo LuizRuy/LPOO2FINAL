@@ -58,22 +58,21 @@ public class TelaStatusPedidos extends JFrame {
 
         configurarListeners();
 
-        carregarPedidos();
+        controller.listarTodosPedidos();
     }
 
     private void configurarListeners() {
         btnAtualizar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                atualizarStatus();
+                controller.atualizarStatus();
             }
         });
     }
 
-    private void carregarPedidos() {
+    public void carregarPedidos(List<Pedido> pedidos) {
         try {
             modeloTabela.setRowCount(0);
-            List<Pedido> pedidos = controller.listarTodosPedidos();
             if (pedidos != null) {
                 for (Pedido pedido : pedidos) {
                     modeloTabela.addRow(new Object[]{
@@ -89,35 +88,21 @@ public class TelaStatusPedidos extends JFrame {
         }
     }
 
-    private void atualizarStatus() {
-        try {
-            int linhaSelecionada = tabelaPedidos.getSelectedRow();
-            if (linhaSelecionada == -1) {
-                mostrarErro("Selecione um pedido para atualizar!");
-                return;
-            }
-
-            int id = (int) tabelaPedidos.getValueAt(linhaSelecionada, 0);
-            EstadoPedido novoEstado = (EstadoPedido) cmbEstado.getSelectedItem();
-
-            // Buscar o pedido completo do banco
-            Pedido pedido = controller.buscarPedidoPorId(id);
-            if (pedido == null) {
-                mostrarErro("Pedido não encontrado!");
-                return;
-            }
-
-            controller.atualizarEstadoPedido(pedido, novoEstado);
-
-            carregarPedidos();
-            mostrarMensagem("Status atualizado com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao atualizar status: " + e.getMessage());
+    public Pedido atualizarStatus() {
+        int linhaSelecionada = tabelaPedidos.getSelectedRow();
+        if (linhaSelecionada == -1) {
+            mostrarErro("Selecione um pedido para atualizar!");
+            return null;
         }
-    }
 
-    public void atualizarTabela() {
-        carregarPedidos();
+        int id = (int) tabelaPedidos.getValueAt(linhaSelecionada, 0);
+        EstadoPedido novoEstado = (EstadoPedido) cmbEstado.getSelectedItem();
+
+        Pedido pedido = new Pedido();
+        pedido.setId(id);
+        pedido.setEstado(novoEstado);
+
+        return pedido;
     }
 
     public void mostrarErro(String mensagem) {

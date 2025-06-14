@@ -19,6 +19,9 @@ public class Pedido {
         this.precoTotal = 0.0;
     }
 
+    public Pedido() {
+    }
+
     public void adicionarPizza(Pizza pizza) {
         pizzas.add(pizza);
         calcularPrecoTotal();

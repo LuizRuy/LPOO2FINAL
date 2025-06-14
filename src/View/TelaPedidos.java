@@ -1,13 +1,9 @@
 package View;
 
 import Model.Cliente;
-import Model.Circulo;
-import Model.Forma;
 import Model.Pedido;
 import Model.Pizza;
-import Model.Quadrado;
 import Model.Sabor;
-import Model.Triangulo;
 import Controller.PedidoController;
 import enums.FormaPizza;
 import enums.EstadoPedido;
@@ -15,7 +11,6 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -25,9 +20,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
 public class TelaPedidos extends JFrame {
@@ -46,13 +41,9 @@ public class TelaPedidos extends JFrame {
     private JTable tabelaPizzas;
     private DefaultTableModel modeloTabela;
     private PedidoController controller;
-    private Cliente clienteSelecionado;
-    private List<Pizza> pizzasDoPedido;
     private JLabel lblPrecoTotal;
-    private JTextField txtNumeroPedido;
-    private JButton btnCarregarPedido;
-    private Pedido pedidoAtual;
     private JComboBox<String> cmbPedidos;
+    private JButton btnCarregarPedido;
 
     public TelaPedidos() {
         setTitle("Fazer Pedido");
@@ -61,7 +52,6 @@ public class TelaPedidos extends JFrame {
         setLocationRelativeTo(null);
 
         controller = new PedidoController(this);
-        pizzasDoPedido = new ArrayList<>();
 
         JPanel painelCliente = new JPanel(new GridLayout(2, 3, 10, 10));
 
@@ -142,45 +132,42 @@ public class TelaPedidos extends JFrame {
         add(painelPrincipal);
 
         configurarListeners();
-
         carregarSabores();
-
-        carregarPedidosExistentes();
     }
 
     private void configurarListeners() {
         btnBuscarCliente.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                buscarCliente();
+                controller.buscarClientePorTelefone();
             }
         });
 
         btnAdicionarPizza.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                adicionarPizza();
+                controller.adicionarPizzaAoPedido();
             }
         });
 
         btnRemoverPizza.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                removerPizza();
+                controller.removerPizzaDoPedido();
             }
         });
 
         btnFinalizarPedido.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                finalizarPedido();
+                controller.finalizarPedido();
             }
         });
 
         btnCarregarPedido.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                carregarPedidoSelecionado();
+                controller.buscarPedidoPorId();
             }
         });
 
@@ -217,259 +204,58 @@ public class TelaPedidos extends JFrame {
         }
     }
 
-    private void buscarCliente() {
-        try {
-            String telefone = txtTelefone.getText().trim();
-            if (telefone.isEmpty()) {
-                mostrarErro("Digite o telefone do cliente!");
-                return;
-            }
-
-            clienteSelecionado = controller.buscarClientePorTelefone(telefone);
-            if (clienteSelecionado != null) {
-                lblCliente.setText("Cliente: " + clienteSelecionado.getNome() + " " + clienteSelecionado.getSobrenome());
-            } else {
-                mostrarErro("Cliente não encontrado!");
-                lblCliente.setText("Cliente não selecionado");
-            }
-            carregarPedidosExistentes();
-        } catch (Exception e) {
-            mostrarErro("Erro ao buscar cliente: " + e.getMessage());
-        }
-    }
-
     private void carregarSabores() {
-        try {
-            List<Sabor> sabores = controller.listarTodosSabores();
-
+        List<Sabor> sabores = controller.listarTodosSabores();
+        if (sabores != null) {
             cmbSabor1.removeAllItems();
             cmbSabor2.removeAllItems();
-
             cmbSabor2.addItem(null);
             
             for (Sabor sabor : sabores) {
                 cmbSabor1.addItem(sabor);
                 cmbSabor2.addItem(sabor);
             }
-        } catch (Exception e) {
-            mostrarErro("Erro ao carregar sabores: " + e.getMessage());
         }
     }
 
-    private void adicionarPizza() {
-        try {
-            if (clienteSelecionado == null) {
-                mostrarErro("Selecione um cliente primeiro!");
-                return;
-            }
-
-            FormaPizza forma = (FormaPizza) cmbForma.getSelectedItem();
-            boolean isPorArea = cmbMedida.getSelectedIndex() == 1;
-            double dimensao = ((Number) spnDimensao.getValue()).doubleValue();
-            Sabor sabor1 = (Sabor) cmbSabor1.getSelectedItem();
-            Sabor sabor2 = (Sabor) cmbSabor2.getSelectedItem();
-
-            if (sabor1 == null) {
-                mostrarErro("Selecione pelo menos um sabor!");
-                return;
-            }
-
-            double areaOriginal = dimensao;
-            Forma formaPizza;
-            if (isPorArea) {
-                double dimensaoReal = Math.sqrt(dimensao);
-                if (forma == FormaPizza.CIRCULAR) {
-                    dimensaoReal = Math.sqrt(dimensao / Math.PI);
-                }
-                dimensao = dimensaoReal;
-
-                String tipoMedida = forma == FormaPizza.CIRCULAR ? "raio" : "lado";
-                String mensagem = String.format("Para uma %s com área de %.1f cm²:\n%s calculado: %.1f cm", 
-                    forma.toString().toLowerCase(), 
-                    areaOriginal,
-                    tipoMedida.substring(0, 1).toUpperCase() + tipoMedida.substring(1),
-                    dimensao);
-                mostrarMensagem(mensagem);
-            }
-
-            switch (forma) {
-                case CIRCULAR:
-                    if (dimensao < 7 || dimensao > 23) {
-                        mostrarErro("O raio deve estar entre 7 e 23 cm!");
-                        return;
-                    }
-                    formaPizza = new Circulo(dimensao);
-                    break;
-                case QUADRADO:
-                    if (dimensao < 10 || dimensao > 40) {
-                        mostrarErro("O lado deve estar entre 10 e 40 cm!");
-                        return;
-                    }
-                    formaPizza = new Quadrado(dimensao);
-                    break;
-                case TRIANGULO:
-                    formaPizza = new Triangulo(dimensao);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Forma inválida");
-            }
-
-            Pizza pizza = new Pizza(0, formaPizza, sabor1);
-            if (sabor2 != null) {
-                pizza = new Pizza(0, formaPizza, sabor1, sabor2);
-            }
-
-            if (pedidoAtual != null && pedidoAtual.getId() != 0) {
-                controller.adicionarPizzaAoPedido(pedidoAtual, pizza);
-            }
-
-            pizzasDoPedido.add(pizza);
-
-            modeloTabela.addRow(new Object[]{
-                forma,
-                sabor1.getNome(),
-                sabor2 != null ? sabor2.getNome() : "-",
-                String.format("%.2f", pizza.getPrecoTotal())
-            });
-            
-            atualizarPrecoTotal();
-        } catch (Exception e) {
-            mostrarErro("Erro ao adicionar pizza: " + e.getMessage());
-        }
+    public void atualizarLabelCliente(String texto) {
+        lblCliente.setText(texto);
     }
 
-    private void removerPizza() {
-        int linhaSelecionada = tabelaPizzas.getSelectedRow();
-        if (linhaSelecionada == -1) {
-            mostrarErro("Selecione uma pizza para remover!");
-            return;
-        }
-
-        Pizza pizza = pizzasDoPedido.get(linhaSelecionada);
-        if (pedidoAtual != null && pedidoAtual.getId() != 0) {
-            controller.removerPizzaDoPedido(pedidoAtual, pizza);
-        }
-
-        pizzasDoPedido.remove(linhaSelecionada);
-        modeloTabela.removeRow(linhaSelecionada);
-        atualizarPrecoTotal();
-    }
-
-    private void carregarPedidosExistentes() {
-        try {
-            cmbPedidos.removeAllItems();
-            cmbPedidos.addItem("Selecione um pedido...");
-            if (clienteSelecionado == null) {
-                return;
-            }
-            List<Pedido> pedidos = controller.listarPedidosPorCliente(clienteSelecionado);
-            if (pedidos != null) {
-                for (Pedido pedido : pedidos) {
-                    String itemPedido = String.format("Pedido #%d - R$ %.2f - %s", 
-                        pedido.getId(), 
-                        pedido.getPrecoTotal(),
-                        pedido.getEstado());
-                    cmbPedidos.addItem(itemPedido);
-                }
-            }
-        } catch (Exception e) {
-            mostrarErro("Erro ao carregar pedidos: " + e.getMessage());
-        }
-    }
-
-    private void carregarPedidoSelecionado() {
-        try {
-            int selectedIndex = cmbPedidos.getSelectedIndex();
-            if (selectedIndex <= 0) {
-                mostrarErro("Selecione um pedido!");
-                return;
-            }
-
-            String selectedItem = (String) cmbPedidos.getSelectedItem();
-            int pedidoId = Integer.parseInt(selectedItem.split("#")[1].split(" ")[0]);
-            
-            pedidoAtual = controller.buscarPedidoPorId(pedidoId);
-
-            if (pedidoAtual == null) {
-                mostrarErro("Pedido não encontrado!");
-                return;
-            }
-
-            if (pedidoAtual.getEstado() != EstadoPedido.ABERTO) {
-                mostrarErro("Apenas pedidos em estado ABERTO podem ser alterados!");
-                return;
-            }
-
-            clienteSelecionado = pedidoAtual.getCliente();
-            pizzasDoPedido = pedidoAtual.getPizzas();
-
-            lblCliente.setText("Cliente: " + clienteSelecionado.getNome() + " " + clienteSelecionado.getSobrenome());
-            txtTelefone.setText(clienteSelecionado.getTelefone());
-            atualizarTabelaPizzas();
-            atualizarPrecoTotal();
-            
-            mostrarMensagem("Pedido carregado com sucesso!");
-        } catch (Exception e) {
-            mostrarErro("Erro ao carregar pedido: " + e.getMessage());
-        }
-    }
-
-    private void finalizarPedido() {
-        try {
-            if (clienteSelecionado == null) {
-                mostrarErro("Selecione um cliente primeiro!");
-                return;
-            }
-
-            if (pizzasDoPedido.isEmpty()) {
-                mostrarErro("Adicione pelo menos uma pizza ao pedido!");
-                return;
-            }
-
-            if (pedidoAtual == null) {
-                pedidoAtual = new Pedido(0, clienteSelecionado);
-                pedidoAtual.setEstado(EstadoPedido.ABERTO);
-                pedidoAtual.setPizzas(pizzasDoPedido);
-            }
-
-            controller.finalizarPedido(pedidoAtual);
-
-            carregarPedidosExistentes();
-            limparPedido();
-        } catch (Exception e) {
-            mostrarErro("Erro ao finalizar pedido: " + e.getMessage());
-        }
-    }
-
-    public void atualizarTabelaPizzas() {
+    public void atualizarTabelaPizzas(List<Pizza> pizzas) {
         modeloTabela.setRowCount(0);
-        for (Pizza pizza : pizzasDoPedido) {
+        for (Pizza pizza : pizzas) {
             modeloTabela.addRow(new Object[]{
-                pizza.getTipoForma(),
+                pizza.getForma().getClass().getSimpleName(),
                 pizza.getSabor1().getNome(),
                 pizza.getSabor2() != null ? pizza.getSabor2().getNome() : "-",
-                String.format("%.2f", pizza.getPrecoTotal())
+                String.format("R$ %.2f", pizza.getPrecoTotal())
             });
+        }
+    }
+
+    public void atualizarPrecoTotal(double total) {
+        lblPrecoTotal.setText(String.format("Total: R$ %.2f", total));
+    }
+
+    public void atualizarComboPedidos(List<Pedido> pedidos) {
+        cmbPedidos.removeAllItems();
+        if (pedidos != null) {
+            for (Pedido pedido : pedidos) {
+                cmbPedidos.addItem(String.format("Pedido #%d - R$ %.2f - %s", 
+                    pedido.getId(), 
+                    pedido.getPrecoTotal(),
+                    pedido.getEstado()));
+            }
         }
     }
 
     public void limparPedido() {
-        clienteSelecionado = null;
-        pizzasDoPedido.clear();
-        pedidoAtual = null;
-        atualizarTabelaPizzas();
-        atualizarPrecoTotal();
-        txtTelefone.setText("");
-        cmbPedidos.setSelectedIndex(0);
+        modeloTabela.setRowCount(0);
+        lblPrecoTotal.setText("Total: R$ 0,00");
         lblCliente.setText("Cliente não selecionado");
-    }
-
-    private void atualizarPrecoTotal() {
-        double total = 0.0;
-        for (Pizza pizza : pizzasDoPedido) {
-            total += pizza.getPrecoTotal();
-        }
-        lblPrecoTotal.setText(String.format("Total: R$ %.2f", total));
+        txtTelefone.setText("");
+        cmbPedidos.removeAllItems();
     }
 
     public void mostrarErro(String mensagem) {
@@ -478,5 +264,42 @@ public class TelaPedidos extends JFrame {
 
     public void mostrarMensagem(String mensagem) {
         JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // Métodos getters para fornecer valores ao controller
+    public String getTelefoneCliente() {
+        return txtTelefone.getText().trim();
+    }
+
+    public FormaPizza getFormaPizza() {
+        return (FormaPizza) cmbForma.getSelectedItem();
+    }
+
+    public boolean isPorArea() {
+        return cmbMedida.getSelectedIndex() == 1;
+    }
+
+    public double getDimensao() {
+        return ((Number) spnDimensao.getValue()).doubleValue();
+    }
+
+    public Sabor getSabor1() {
+        return (Sabor) cmbSabor1.getSelectedItem();
+    }
+
+    public Sabor getSabor2() {
+        return (Sabor) cmbSabor2.getSelectedItem();
+    }
+
+    public int getLinhaPizzaSelecionada() {
+        return tabelaPizzas.getSelectedRow();
+    }
+
+    public int getIdPedidoSelecionado() {
+        String pedidoSelecionado = (String) cmbPedidos.getSelectedItem();
+        if (pedidoSelecionado != null) {
+            return Integer.parseInt(pedidoSelecionado.split("#")[1].split(" ")[0]);
+        }
+        return -1;
     }
 } 

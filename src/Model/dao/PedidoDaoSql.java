@@ -98,8 +98,11 @@ public class PedidoDaoSql implements PedidoDao {
             stmt.setString(2, pedido.getEstado().name());
             stmt.setInt(3, pedido.getId());
             stmt.executeUpdate();
-            
-            // Atualizar pizzas do pedido
+            for (Pizza pizza : pedido.getPizzas()) {
+                if (pizza.getId() == 0) {
+                    pizzaDAO.inserir(pizza);
+                }
+            }
             excluirPizzasDoPedido(pedido.getId());
             inserirPizzasDoPedido(pedido);
         }

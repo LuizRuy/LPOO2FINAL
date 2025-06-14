@@ -56,6 +56,13 @@ public class ClienteDaoSql implements ClienteDao {
     }
 
     @Override
+    public void excluir(List<Cliente> clientes) throws Exception {
+        for(Cliente cliente : clientes){
+            excluir(cliente.getId());
+        }
+    }
+
+    @Override
     public Cliente buscarPorId(int id) throws Exception {
         String sql = "SELECT * FROM cliente WHERE id = ?";
         try (Connection conn = ConnectionFactory.getConnection();

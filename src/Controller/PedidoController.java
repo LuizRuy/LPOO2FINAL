@@ -16,6 +16,8 @@ import enums.FormaPizza;
 import Model.Circulo;
 import Model.Quadrado;
 import Model.Triangulo;
+
+import javax.swing.*;
 import java.util.List;
 
 public class PedidoController {
@@ -208,18 +210,27 @@ public class PedidoController {
     }
 
     private Pizza criarPizza(FormaPizza forma, boolean isPorArea, double dimensao, Sabor sabor1, Sabor sabor2) {
-        // Cria o objeto Forma correto
         Model.Forma formaObj = null;
+        double medida; // lado ou raio para mostrar
+
         switch (forma) {
             case CIRCULAR:
                 formaObj = new Circulo(isPorArea ? Math.sqrt(dimensao / Math.PI) : dimensao);
+                medida = ((Circulo) formaObj).getRaio();
+                JOptionPane.showMessageDialog(null, "O raio do círculo é: " + medida + " cm");
                 break;
             case QUADRADO:
                 formaObj = new Quadrado(isPorArea ? Math.sqrt(dimensao) : dimensao);
+                medida = ((Quadrado) formaObj).getLado();
+                JOptionPane.showMessageDialog(null, "O lado do quadrado é: " + medida + " cm");
                 break;
             case TRIANGULO:
                 formaObj = new Triangulo(isPorArea ? Math.sqrt(4 * dimensao / Math.sqrt(3)) : dimensao);
+                medida = ((Triangulo) formaObj).getLado();
+                JOptionPane.showMessageDialog(null, "O lado do triângulo é: " + medida + " cm");
                 break;
+            default:
+                throw new IllegalArgumentException("Forma inválida");
         }
         if (sabor2 != null) {
             return new Pizza(0, formaObj, sabor1, sabor2);
@@ -227,6 +238,7 @@ public class PedidoController {
             return new Pizza(0, formaObj, sabor1);
         }
     }
+
 
     private double calcularPrecoTotal(Pedido pedido) {
         return pedido.getPizzas().stream()

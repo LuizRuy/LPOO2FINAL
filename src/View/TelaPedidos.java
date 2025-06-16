@@ -266,7 +266,6 @@ public class TelaPedidos extends JFrame {
         JOptionPane.showMessageDialog(this, mensagem, "Sucesso", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    // Métodos getters para fornecer valores ao controller
     public String getTelefoneCliente() {
         return txtTelefone.getText().trim();
     }

@@ -63,20 +63,31 @@ public class ClienteController {
 
     public void buscar() {
         String telefone = tela.getTelefoneBusca();
+        String sobrenome = tela.getSobrenomeBusca();
         if (telefone.isEmpty()) {
-            atualizarTabela();
-            return;
+            try {
+                List<Cliente> clientes = clienteDao.buscarPorSobrenome(sobrenome);
+                if (clientes != null) {
+                    tela.mostrarClientes(clientes);
+                } else {
+                    tela.mostrarErro("Cliente não encontrado!");
+                }
+            } catch (Exception e) {
+                tela.mostrarErro("Erro ao buscar cliente: " + e.getMessage());
+            }
         }
 
-        try {
-            Cliente cliente = clienteDao.buscarPorTelefone(telefone);
-            if (cliente != null) {
-                tela.mostrarCliente(cliente);
-            } else {
-                tela.mostrarErro("Cliente não encontrado!");
+        if(sobrenome.isEmpty()) {
+            try {
+                Cliente cliente = clienteDao.buscarPorTelefone(telefone);
+                if (cliente != null) {
+                    tela.mostrarCliente(cliente);
+                } else {
+                    tela.mostrarErro("Cliente não encontrado!");
+                }
+            } catch (Exception e) {
+                tela.mostrarErro("Erro ao buscar cliente: " + e.getMessage());
             }
-        } catch (Exception e) {
-            tela.mostrarErro("Erro ao buscar cliente: " + e.getMessage());
         }
     }
 

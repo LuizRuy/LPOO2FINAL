@@ -169,6 +169,10 @@ public class TelaClientes extends JFrame {
         return txtTelefone.getText().trim();
     }
 
+    public String getSobrenomeBusca() {
+        return txtSobrenome.getText().trim();
+    }
+
     public void mostrarClientes(List<Cliente> clientes) {
         modeloTabela.setRowCount(0);
         for (Cliente cliente : clientes) {

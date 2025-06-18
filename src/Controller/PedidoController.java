@@ -58,23 +58,15 @@ public class PedidoController {
         }
     }
 
-    public List<Sabor> listarTodosSabores() {
+    public void listarTodosSabores() {
         try {
-            return saborDao.listarTodos();
+            List<Sabor> sabores = saborDao.listarTodos();
+            view.atualizarSabores(sabores);
         } catch (Exception e) {
             view.mostrarErro("Erro ao listar sabores: " + e.getMessage());
-            return null;
         }
     }
 
-    public List<Pedido> listarTodosPedidos() {
-        try {
-            return pedidoDao.listarTodos();
-        } catch (Exception e) {
-            view.mostrarErro("Erro ao listar pedidos: " + e.getMessage());
-            return null;
-        }
-    }
 
     public void buscarPedidoPorId() {
         try {

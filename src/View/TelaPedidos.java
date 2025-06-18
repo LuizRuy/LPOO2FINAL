@@ -132,7 +132,7 @@ public class TelaPedidos extends JFrame {
         add(painelPrincipal);
 
         configurarListeners();
-        carregarSabores();
+        controller.listarTodosSabores();
     }
 
     private void configurarListeners() {
@@ -189,34 +189,54 @@ public class TelaPedidos extends JFrame {
     private void atualizarLabelDimensao() {
         FormaPizza forma = (FormaPizza) cmbForma.getSelectedItem();
         boolean isPorArea = cmbMedida.getSelectedIndex() == 1;
-        
+
         if (isPorArea) {
             lblDimensao.setText("Área (cm²):");
             spnDimensao.setModel(new SpinnerNumberModel(400, 100, 1600, 50));
         } else {
-            String medida = forma == FormaPizza.CIRCULAR ? "Raio" : "Lado";
+            String medida;
+            int min, max, valorInicial;
+
+            switch (forma) {
+                case CIRCULAR:
+                    medida = "Raio";
+                    min = 7;
+                    max = 23;
+                    valorInicial = 15;
+                    break;
+                case TRIANGULO:
+                    medida = "Lado";
+                    min = 10;
+                    max = 60;
+                    valorInicial = 20;
+                    break;
+                default:
+                    medida = "Lado";
+                    min = 10;
+                    max = 40;
+                    valorInicial = 20;
+                    break;
+            }
+
             lblDimensao.setText(medida + " (cm):");
-            
-            int min = forma == FormaPizza.CIRCULAR ? 7 : 10;
-            int max = forma == FormaPizza.CIRCULAR ? 23 : 40;
-            int valorInicial = forma == FormaPizza.CIRCULAR ? 15 : 20;
             spnDimensao.setModel(new SpinnerNumberModel(valorInicial, min, max, 1));
         }
     }
 
-    private void carregarSabores() {
-        List<Sabor> sabores = controller.listarTodosSabores();
+
+    public void atualizarSabores(List<Sabor> sabores) {
+        cmbSabor1.removeAllItems();
+        cmbSabor2.removeAllItems();
+        cmbSabor2.addItem(null);
+
         if (sabores != null) {
-            cmbSabor1.removeAllItems();
-            cmbSabor2.removeAllItems();
-            cmbSabor2.addItem(null);
-            
             for (Sabor sabor : sabores) {
                 cmbSabor1.addItem(sabor);
                 cmbSabor2.addItem(sabor);
             }
         }
     }
+
 
     public void atualizarLabelCliente(String texto) {
         lblCliente.setText(texto);

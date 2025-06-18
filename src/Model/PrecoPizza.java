@@ -1,5 +1,8 @@
 package Model;
 
+import Model.dao.DaoFactory;
+import Model.dao.DaoType;
+import Model.dao.PrecoPizzaDao;
 import enums.TipoPizza;
 
 public class PrecoPizza {
@@ -9,9 +12,24 @@ public class PrecoPizza {
     private double precoPremium;
 
     private PrecoPizza() {
-        this.precoSimples = 0.05;  
-        this.precoEspecial = 0.08; 
-        this.precoPremium = 0.12;  
+        try {
+            PrecoPizzaDao dao = DaoFactory.getPrecoPizzaDao(DaoType.SQL);
+            PrecoPizza precoDoBanco = dao.buscar();
+            if (precoDoBanco != null) {
+                this.precoSimples = precoDoBanco.getPrecoSimples();
+                this.precoEspecial = precoDoBanco.getPrecoEspecial();
+                this.precoPremium = precoDoBanco.getPrecoPremium();
+            } else {
+                this.precoSimples = 0.05;
+                this.precoEspecial = 0.08;
+                this.precoPremium = 0.12;
+                dao.inserir(this);
+            }
+        } catch (Exception e) {
+            this.precoSimples = 0.05;
+            this.precoEspecial = 0.08;
+            this.precoPremium = 0.12;
+        }
     }
 
     public static PrecoPizza getInstance() {

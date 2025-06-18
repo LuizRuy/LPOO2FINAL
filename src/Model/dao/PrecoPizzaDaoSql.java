@@ -53,7 +53,14 @@ public class PrecoPizzaDaoSql implements PrecoPizzaDao {
 
     @Override
     public void inserir(PrecoPizza preco) throws Exception {
-        throw new UnsupportedOperationException("Ainda não implementado.");
+        String sql = "INSERT INTO preco_pizza (preco_simples, preco_especial, preco_premium) VALUES (?, ?, ?)";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDouble(1, preco.getPrecoSimples());
+            stmt.setDouble(2, preco.getPrecoEspecial());
+            stmt.setDouble(3, preco.getPrecoPremium());
+            stmt.executeUpdate();
+        }
     }
 
     @Override

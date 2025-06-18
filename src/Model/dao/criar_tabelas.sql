@@ -45,7 +45,3 @@ CREATE TABLE IF NOT EXISTS preco_pizza (
     preco_especial DECIMAL(10,4) NOT NULL,
     preco_premium DECIMAL(10,4) NOT NULL
 );
-
--- Insere um registro inicial se não existir
-INSERT INTO preco_pizza (id, preco_simples, preco_especial, preco_premium)
-SELECT 1, 0.05, 0.08, 0.12 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM preco_pizza WHERE id = 1);

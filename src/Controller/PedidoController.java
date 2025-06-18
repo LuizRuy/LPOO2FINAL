@@ -92,6 +92,8 @@ public class PedidoController {
 
             if (pedidoAtual.getEstado() != EstadoPedido.ABERTO) {
                 view.mostrarErro("Apenas pedidos em estado ABERTO podem ser alterados!");
+                pedidoAtual = null;
+                clienteSelecionado = null;
                 return;
             }
 
@@ -178,34 +180,6 @@ public class PedidoController {
             limparPedido();
         } catch (Exception e) {
             view.mostrarErro("Erro ao finalizar pedido: " + e.getMessage());
-        }
-    }
-
-    public void atualizarEstadoPedido(EstadoPedido novoEstado) {
-        try {
-            if (pedidoAtual == null) {
-                view.mostrarErro("Nenhum pedido selecionado!");
-                return;
-            }
-
-            pedidoAtual.setEstado(novoEstado);
-            pedidoDao.atualizar(pedidoAtual);
-            view.atualizarTabelaPizzas(pedidoAtual.getPizzas());
-        } catch (Exception e) {
-            view.mostrarErro("Erro ao atualizar estado do pedido: " + e.getMessage());
-        }
-    }
-
-    public List<Pedido> listarPedidosPorCliente() {
-        try {
-            if (clienteSelecionado == null) {
-                view.mostrarErro("Nenhum cliente selecionado!");
-                return null;
-            }
-            return pedidoDao.buscarPorCliente(clienteSelecionado);
-        } catch (Exception e) {
-            view.mostrarErro("Erro ao listar pedidos do cliente: " + e.getMessage());
-            return null;
         }
     }
 

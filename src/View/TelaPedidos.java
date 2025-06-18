@@ -19,9 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
@@ -32,7 +30,7 @@ public class TelaPedidos extends JFrame {
     private JComboBox<FormaPizza> cmbForma;
     private JComboBox<String> cmbMedida;
     private JLabel lblDimensao;
-    private JSpinner spnDimensao;
+    private JTextField txtDimensao;
     private JComboBox<Sabor> cmbSabor1;
     private JComboBox<Sabor> cmbSabor2;
     private JButton btnAdicionarPizza;
@@ -82,8 +80,8 @@ public class TelaPedidos extends JFrame {
 
         lblDimensao = new JLabel("Tamanho (cm):");
         painelPizza.add(lblDimensao);
-        spnDimensao = new JSpinner(new SpinnerNumberModel(20, 1, 100, 1));
-        painelPizza.add(spnDimensao);
+        txtDimensao = new JTextField();
+        painelPizza.add(txtDimensao);
 
         painelPizza.add(new JLabel("Sabor 1:"));
         cmbSabor1 = new JComboBox<>();
@@ -192,34 +190,20 @@ public class TelaPedidos extends JFrame {
 
         if (isPorArea) {
             lblDimensao.setText("Área (cm²):");
-            spnDimensao.setModel(new SpinnerNumberModel(400, 100, 1600, 50));
         } else {
             String medida;
-            int min, max, valorInicial;
-
             switch (forma) {
                 case CIRCULAR:
                     medida = "Raio";
-                    min = 7;
-                    max = 23;
-                    valorInicial = 15;
                     break;
                 case TRIANGULO:
                     medida = "Lado";
-                    min = 10;
-                    max = 60;
-                    valorInicial = 20;
                     break;
                 default:
                     medida = "Lado";
-                    min = 10;
-                    max = 40;
-                    valorInicial = 20;
                     break;
             }
-
             lblDimensao.setText(medida + " (cm):");
-            spnDimensao.setModel(new SpinnerNumberModel(valorInicial, min, max, 1));
         }
     }
 
@@ -299,7 +283,11 @@ public class TelaPedidos extends JFrame {
     }
 
     public double getDimensao() {
-        return ((Number) spnDimensao.getValue()).doubleValue();
+        try {
+            return Double.parseDouble(txtDimensao.getText().trim());
+        } catch (NumberFormatException e) {
+            return -1; // Valor inválido para forçar a validação no controller
+        }
     }
 
     public Sabor getSabor1() {

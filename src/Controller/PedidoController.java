@@ -112,6 +112,37 @@ public class PedidoController {
             Sabor sabor1 = view.getSabor1();
             Sabor sabor2 = view.getSabor2();
 
+            // Validação manual dos valores de lado/raio
+            if (dimensao <= 0) {
+                if (isPorArea) {
+                    mostrarInfoMedidaPorArea(forma, dimensao);
+                }
+                view.mostrarErro("Digite um valor numérico válido para a dimensão!");
+                return;
+            }
+            if (isPorArea) {
+                // Calcular e mostrar a medida correspondente
+                mostrarInfoMedidaPorArea(forma, dimensao);
+                // Validar área
+                if (dimensao < 100 || dimensao > 1600) {
+                    view.mostrarErro("A área deve estar entre 100 e 1600 cm².");
+                    return;
+                }
+            } else {
+                if (forma == FormaPizza.QUADRADO && (dimensao < 10 || dimensao > 40)) {
+                    view.mostrarErro("O lado do quadrado deve estar entre 10 e 40 cm.");
+                    return;
+                }
+                if (forma == FormaPizza.TRIANGULO && (dimensao < 20 || dimensao > 60)) {
+                    view.mostrarErro("O lado do triângulo deve estar entre 20 e 60 cm.");
+                    return;
+                }
+                if (forma == FormaPizza.CIRCULAR && (dimensao < 7 || dimensao > 23)) {
+                    view.mostrarErro("O raio do círculo deve estar entre 7 e 23 cm.");
+                    return;
+                }
+            }
+
             if (sabor1 == null) {
                 view.mostrarErro("Selecione pelo menos um sabor!");
                 return;
@@ -129,6 +160,27 @@ public class PedidoController {
         } catch (Exception e) {
             view.mostrarErro("Erro ao adicionar pizza: " + e.getMessage());
         }
+    }
+
+    private void mostrarInfoMedidaPorArea(FormaPizza forma, double area) {
+        if (area <= 0) return;
+        double medida = 0;
+        String tipo = "";
+        switch (forma) {
+            case CIRCULAR:
+                medida = Math.sqrt(area / Math.PI);
+                tipo = "raio do círculo";
+                break;
+            case QUADRADO:
+                medida = Math.sqrt(area);
+                tipo = "lado do quadrado";
+                break;
+            case TRIANGULO:
+                medida = Math.sqrt(4 * area / Math.sqrt(3));
+                tipo = "lado do triângulo";
+                break;
+        }
+        view.mostrarMensagem(String.format("O %s é: %.1f cm", tipo, medida));
     }
 
     public void removerPizzaDoPedido() {
@@ -182,18 +234,12 @@ public class PedidoController {
         switch (forma) {
             case CIRCULAR:
                 formaObj = new Circulo(isPorArea ? Math.sqrt(dimensao / Math.PI) : dimensao);
-                medida = ((Circulo) formaObj).getRaio();
-                JOptionPane.showMessageDialog(null, "O raio do círculo é: " + medida + " cm");
                 break;
             case QUADRADO:
                 formaObj = new Quadrado(isPorArea ? Math.sqrt(dimensao) : dimensao);
-                medida = ((Quadrado) formaObj).getLado();
-                JOptionPane.showMessageDialog(null, "O lado do quadrado é: " + medida + " cm");
                 break;
             case TRIANGULO:
                 formaObj = new Triangulo(isPorArea ? Math.sqrt(4 * dimensao / Math.sqrt(3)) : dimensao);
-                medida = ((Triangulo) formaObj).getLado();
-                JOptionPane.showMessageDialog(null, "O lado do triângulo é: " + medida + " cm");
                 break;
             default:
                 throw new IllegalArgumentException("Forma inválida");
